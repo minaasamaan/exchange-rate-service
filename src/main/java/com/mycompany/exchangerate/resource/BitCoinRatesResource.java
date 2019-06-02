@@ -1,7 +1,8 @@
 package com.mycompany.exchangerate.resource;
 
+import com.mycompany.core.resource.ApiResource;
 import com.mycompany.exchangerate.dto.BitCoinRateDto;
-import com.mycompany.exchangerate.manager.BitCoinRatesManager;
+import com.mycompany.exchangerate.manager.BitCoinRatesManagerImpl;
 import com.mycompany.exchangerate.transformer.BitCoinRateTransformer;
 
 import org.springframework.beans.factory.annotation.Autowired;
@@ -11,34 +12,29 @@ import org.springframework.data.web.PagedResourcesAssembler;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
 
-import static org.springframework.http.HttpStatus.SERVICE_UNAVAILABLE;
+import static com.mycompany.core.resource.ApiResource.API_V1;
 import static org.springframework.http.MediaType.APPLICATION_JSON_VALUE;
 
 @RestController
-public class BitCoinRatesResource {
+@RequestMapping(API_V1)
+public class BitCoinRatesResource implements ApiResource {
 
     @Autowired
-    private BitCoinRatesManager    bitCoinRatesManager;
+    private BitCoinRatesManagerImpl bitCoinRatesManager;
     @Autowired
-    private BitCoinRateTransformer bitCoinRateTransformer;
+    private BitCoinRateTransformer  bitCoinRateTransformer;
 
     @GetMapping(value = "rate",
                 produces = APPLICATION_JSON_VALUE)
     public ResponseEntity getRate() {
-
-        Double latestRate = bitCoinRatesManager.getLatestRate();
-
-        if (latestRate == null) {
-            return ResponseEntity.status(SERVICE_UNAVAILABLE).build();
-        }
-
-        return ResponseEntity.ok(BitCoinRateDto.builder().rate(latestRate).date(LocalDate.now(
+        return ResponseEntity.ok(BitCoinRateDto.builder().rate(bitCoinRatesManager.getLatestRate()).date(LocalDate.now(
                 ZoneOffset.UTC)).build());
     }
 

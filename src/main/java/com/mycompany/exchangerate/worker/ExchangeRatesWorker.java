@@ -17,12 +17,15 @@ import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.ZoneOffset;
 
+/**
+ * A background self-healing worker, that fetches latest Bitcoin rates and update database accordingly.
+ */
 @Component
 public class ExchangeRatesWorker {
 
     private final Log logger = LogFactory.getLog(getClass());
 
-    private final static String DEFAULT_CURRENCY="USD";
+    private final static String DEFAULT_CURRENCY = "USD";
 
     @Autowired
     private ExchangeRatesClient exchangeRatesClient;
@@ -34,46 +37,56 @@ public class ExchangeRatesWorker {
     private Boolean isSchedulingEnabled;
 
     @Scheduled(fixedDelayString = "${scheduler.exchange_rates.interval_in_millis}")
-    public void execute(){
-        if(isSchedulingEnabled){
+    public void execute() {
+        if (isSchedulingEnabled) {
             updateRates();
         }
     }
 
     void updateRates() {
-        logger.info(String.format("Starting updateRates at %s", LocalDateTime.now(ZoneOffset.UTC)));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Starting updateRates at %s", LocalDateTime.now(ZoneOffset.UTC)));
+        }
 
-        LocalDate lastProcessedDate= bitCoinRateRepository.getMaxBitCoinRateDate();
-        LocalDate currentDate= LocalDate.now(ZoneOffset.UTC);
+        LocalDate lastProcessedDate = bitCoinRateRepository.getMaxBitCoinRateDate();
+        LocalDate currentDate = LocalDate.now(ZoneOffset.UTC);
 
-        //self-healing
-        while(lastProcessedDate!=null && lastProcessedDate.isBefore(currentDate)){
+        //self-healing mechanism to back-fill missing dates since last successfully inserted date, also to update yesterday's rate.
+        while (lastProcessedDate != null && lastProcessedDate.isBefore(currentDate)) {
             logger.info(String.format("Self-healing for date: %s", lastProcessedDate));
 
             LocalDateTime endOfDay = lastProcessedDate.atTime(LocalTime.MAX);
-            Instant endOfDayInstant= endOfDay.toInstant(ZoneOffset.UTC);
-            Double rate= exchangeRatesClient.getRate(endOfDayInstant, DEFAULT_CURRENCY);
+            Instant endOfDayInstant = endOfDay.toInstant(ZoneOffset.UTC);
+            Double rate = exchangeRatesClient.getRate(endOfDayInstant, DEFAULT_CURRENCY);
 
             upsert(rate, lastProcessedDate, endOfDayInstant);
 
-            lastProcessedDate= lastProcessedDate.plusDays(1);
+            lastProcessedDate = lastProcessedDate.plusDays(1);
         }
 
-        Double rate= exchangeRatesClient.getRate(DEFAULT_CURRENCY);
+        //update current rate
+        Double rate = exchangeRatesClient.getRate(DEFAULT_CURRENCY);
         upsert(rate, currentDate, Instant.now());
 
-        logger.info(String.format("Finalizing updateRates at %s", LocalDateTime.now(ZoneOffset.UTC)));
+        if (logger.isTraceEnabled()) {
+            logger.trace(String.format("Finalizing updateRates at %s", LocalDateTime.now(ZoneOffset.UTC)));
+        }
     }
 
-    private void upsert(double rate, LocalDate localDate, Instant lastModified){
+    private void upsert(double rate, LocalDate localDate, Instant lastModified) {
 
-        BitCoinRate currentRate= bitCoinRateRepository.getBitCoinRateByDate(localDate);
+        BitCoinRate currentRate = bitCoinRateRepository.getBitCoinRateByDate(localDate);
 
         Long id = null;
 
-        if(currentRate!=null){
-            id= currentRate.getId();
+        if (currentRate != null) {
+            id = currentRate.getId();
         }
-        bitCoinRateRepository.save(BitCoinRate.builder().id(id).rate(rate).date(localDate).lastModified(lastModified).build());
+        bitCoinRateRepository.save(BitCoinRate.builder()
+                                              .id(id)
+                                              .rate(rate)
+                                              .date(localDate)
+                                              .lastModified(lastModified)
+                                              .build());
     }
 }

@@ -7,3 +7,4 @@ CREATE TABLE bit_coin_rates (
   last_modified TIMESTAMP NOT NULL
 );
 
+CREATE UNIQUE INDEX date_idx ON bit_coin_rates(date);

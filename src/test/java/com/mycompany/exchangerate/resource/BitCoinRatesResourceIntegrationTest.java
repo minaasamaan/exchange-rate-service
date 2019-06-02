@@ -38,9 +38,9 @@ import static org.springframework.test.web.servlet.result.MockMvcResultMatchers.
 @AutoConfigureMockMvc
 public class BitCoinRatesResourceIntegrationTest {
 
-    private static final String GET_LATEST_RATE = "/rate";
+    private static final String GET_LATEST_RATE = "/v1/rate";
 
-    private static final String GET_HISTORY = "/history?start=%s&end=%s&page=%s&size=%s";
+    private static final String GET_HISTORY = "/v1/history?start=%s&end=%s&page=%s&size=%s";
 
     @Autowired
     private MockMvc mockMvc;

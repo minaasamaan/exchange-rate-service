@@ -1,11 +1,14 @@
 package com.mycompany.exchangerate.manager;
 
 import com.mycompany.exchangerate.client.ExchangeRatesClient;
+import com.mycompany.exchangerate.exception.ExchangeRateException;
 import com.mycompany.exchangerate.model.BitCoinRate;
 import com.mycompany.exchangerate.repository.BitCoinRateRepository;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixCommand;
 import com.netflix.hystrix.contrib.javanica.annotation.HystrixProperty;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -13,10 +16,16 @@ import org.springframework.stereotype.Service;
 
 import java.time.LocalDate;
 import java.time.ZoneOffset;
-import java.util.List;
 
+import static com.mycompany.exchangerate.exception.ProcessingError.EMPTY_HISTORY;
+
+/**
+ * @see com.mycompany.exchangerate.manager.BitCoinRatesManager
+ */
 @Service
-public class BitCoinRatesManager {
+public class BitCoinRatesManagerImpl implements BitCoinRatesManager{
+
+    private final Log logger = LogFactory.getLog(getClass());
 
     private final static String DEFAULT_CURRENCY = "USD";
 
@@ -26,14 +35,22 @@ public class BitCoinRatesManager {
     @Autowired
     private BitCoinRateRepository bitCoinRateRepository;
 
+    /**
+     * {@inheritDoc}
+     */
     @HystrixCommand(fallbackMethod = "getTodayRateFromHistory",
                     commandProperties = {
                             @HystrixProperty(name = "execution.isolation.thread.timeoutInMilliseconds",
                                              value = "1000")})
+    @Override
     public Double getLatestRate() {
         return exchangeRatesClient.getRate(DEFAULT_CURRENCY);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Page<BitCoinRate> getHistory(LocalDate startDate,
                                         LocalDate endDate,
                                         Pageable pageable) {
@@ -47,9 +64,19 @@ public class BitCoinRatesManager {
         return bitCoinRateRepository.getBitCoinRateByDateBetween(startDate, endDate, pageable);
     }
 
-    //fallback for getLatestRate
+    /**
+     * A Fallback for {@link BitCoinRatesManagerImpl#getLatestRate()} )}
+     */
     private Double getTodayRateFromHistory() {
-        BitCoinRate latestFromHistory= bitCoinRateRepository.getBitCoinRateByDate(LocalDate.now(ZoneOffset.UTC));
-        return latestFromHistory==null? null: latestFromHistory.getRate();
+        logger.warn("Using fallback getTodayRateFromHistory after failure of getLatestRate!");
+        BitCoinRate latestFromHistory = bitCoinRateRepository.getBitCoinRateByDate(LocalDate.now(ZoneOffset.UTC));
+
+        if (latestFromHistory != null){
+            return latestFromHistory.getRate();
+        }
+
+        logger.warn("Fallback getTodayRateFromHistory failed, no history data exists!");
+
+        throw new ExchangeRateException(EMPTY_HISTORY);
     }
 }
