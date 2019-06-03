@@ -106,8 +106,13 @@ public class BitCoinRatesResourceIntegrationTest {
     }
 
     @Test
-    public void shouldValidateStartEndDates(){
+    public void shouldValidateStartEndDates() throws Exception {
+        LocalDate today = LocalDate.now(ZoneOffset.UTC);
+        LocalDate yesterday = today.minusDays(1);
 
+        mockMvc.perform(get(String.format(GET_HISTORY, today, yesterday, 0, 2)))
+               .andExpect(status().isBadRequest())
+               .andDo(print());
     }
 
     @Test
