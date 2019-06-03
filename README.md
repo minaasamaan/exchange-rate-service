@@ -33,6 +33,9 @@ Normally this layer has exposure to the model, clients and repositories. An impo
 ##### Exceptions Handling:
 Responsible for handling business exceptions, and logging server errors -if any-.
 
+##### Downstream:
+I have chosen https://blockchain.info since it looked providing reliable (and free) API, as well as the capability to retrieve rates for a specific points in time, which is useful in backfilling.
+
 ## Usage
 
 ```bash
