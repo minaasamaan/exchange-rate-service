@@ -28,8 +28,17 @@ DAO layer, where all database related operations reside.
 
 ##### Workers:
 Background workers are business logic layer that initiated by a scheduled jobs rather than an http request.
-Normally this layer has exposure to the model, clients and repositories.
+Normally this layer has exposure to the model, clients and repositories. An important aspect in that layer is the self-healing, just in-case dependencies failed.
 
 ##### Exceptions Handling:
 Responsible for handling business exceptions, and logging server errors -if any-.
 
+## Usage
+
+```bash
+ mvn clean package spring-boot:run
+ 
+ curl localhost:8080/v1/rate
+ curl "localhost:8080/v1/history?start=2019-06-01&end=2019-06-03&page=0&size=10"
+
+```
