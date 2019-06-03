@@ -24,7 +24,7 @@ import static com.mycompany.exchangerate.exception.ProcessingError.START_AFTER_E
  * @see com.mycompany.exchangerate.manager.BitCoinRatesManager
  */
 @Service
-public class BitCoinRatesManagerImpl implements BitCoinRatesManager{
+public class BitCoinRatesManagerImpl implements BitCoinRatesManager {
 
     private final Log logger = LogFactory.getLog(getClass());
 
@@ -63,7 +63,7 @@ public class BitCoinRatesManagerImpl implements BitCoinRatesManager{
             return bitCoinRateRepository.getBitCoinRateByDateLessThanEqual(endDate, pageable);
         }
 
-        if(startDate.isAfter(endDate)){
+        if (startDate.isAfter(endDate)) {
             throw new ExchangeRateException(START_AFTER_END);
         }
         return bitCoinRateRepository.getBitCoinRateByDateBetween(startDate, endDate, pageable);
@@ -76,12 +76,11 @@ public class BitCoinRatesManagerImpl implements BitCoinRatesManager{
         logger.warn("Using fallback getTodayRateFromHistory after failure of getLatestRate!");
         BitCoinRate latestFromHistory = bitCoinRateRepository.getBitCoinRateByDate(LocalDate.now(ZoneOffset.UTC));
 
-        if (latestFromHistory != null){
+        if (latestFromHistory != null) {
             return latestFromHistory.getRate();
         }
 
         logger.warn("Fallback getTodayRateFromHistory failed, no history data exists!");
-
         throw new ExchangeRateException(EMPTY_HISTORY);
     }
 }

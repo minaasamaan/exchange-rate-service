@@ -1,6 +1,6 @@
 package com.mycompany.exchangerate.resource;
 
-import com.mycompany.exchangerate.Application;
+import com.mycompany.Application;
 import com.mycompany.exchangerate.model.BitCoinRate;
 import com.mycompany.exchangerate.repository.BitCoinRateRepository;
 
