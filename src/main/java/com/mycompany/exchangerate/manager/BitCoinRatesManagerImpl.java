@@ -18,6 +18,7 @@ import java.time.LocalDate;
 import java.time.ZoneOffset;
 
 import static com.mycompany.exchangerate.exception.ProcessingError.EMPTY_HISTORY;
+import static com.mycompany.exchangerate.exception.ProcessingError.START_AFTER_END;
 
 /**
  * @see com.mycompany.exchangerate.manager.BitCoinRatesManager
@@ -60,6 +61,10 @@ public class BitCoinRatesManagerImpl implements BitCoinRatesManager{
 
         if (startDate == null) {
             return bitCoinRateRepository.getBitCoinRateByDateLessThanEqual(endDate, pageable);
+        }
+
+        if(startDate.isAfter(endDate)){
+            throw new ExchangeRateException(START_AFTER_END);
         }
         return bitCoinRateRepository.getBitCoinRateByDateBetween(startDate, endDate, pageable);
     }

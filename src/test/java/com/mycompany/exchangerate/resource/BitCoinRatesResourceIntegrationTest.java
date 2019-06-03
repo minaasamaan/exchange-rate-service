@@ -106,6 +106,26 @@ public class BitCoinRatesResourceIntegrationTest {
     }
 
     @Test
+    public void shouldValidateStartEndDates(){
+
+    }
+
+    @Test
+    public void shouldHandleDownstreamFailedAndNoHistory() throws Exception {
+        mockServer.expect(ExpectedCount.once(),
+                          requestTo(new URI(url + "/frombtc?value=100000000&currency=USD")))
+                  .andExpect(method(HttpMethod.GET))
+                  .andRespond(withStatus(HttpStatus.SERVICE_UNAVAILABLE)
+                  );
+
+        mockMvc.perform(get(GET_LATEST_RATE))
+               .andExpect(status().isServiceUnavailable())
+               .andDo(print());
+
+        mockServer.verify();
+    }
+
+    @Test
     public void shouldReturnHistoricalRatesWithPagination() throws Exception {
         LocalDate today = LocalDate.now(ZoneOffset.UTC);
         LocalDate twoDaysAgo = today.minusDays(2);
