@@ -16,7 +16,7 @@
         <spring-cloud.version>Finchley.SR2</spring-cloud.version>
         <commons-lang.version>3.7</commons-lang.version>
         <lombok.version>1.18.0</lombok.version>
-        <junit.version>4.12</junit.version>
+        <junit.version>4.13.1</junit.version>
     </properties>
 
     <parent>
